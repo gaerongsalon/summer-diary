@@ -1,0 +1,44 @@
+{
+  "name": "summer-dawn-backend",
+  "version": "1.0.0",
+  "description": "The backend of Summer dawn",
+  "main": "src/handler.ts",
+  "scripts": {
+    "debug": "SLS_DEBUG=* node --inspect ./node_modules/.bin/serverless offline -s dev",
+    "start": "sls offline",
+    "build": "sls package",
+    "deploy": "sls deploy"
+  },
+  "dependencies": {
+    "@yingyeothon/actor-system": "^0.1.8",
+    "@yingyeothon/actor-system-aws-lambda-support": "^0.1.6",
+    "@yingyeothon/actor-system-redis-support": "^0.1.3",
+    "@yingyeothon/logger": "^0.1.0",
+    "@yingyeothon/repository": "^0.1.3",
+    "@yingyeothon/repository-redis": "^0.1.3",
+    "@yingyeothon/repository-s3": "^0.1.3",
+    "aws-sdk": "2.439.0",
+    "ioredis": "^4.14.0",
+    "mem": "^5.1.1",
+    "source-map-support": "^0.5.10",
+    "time-span": "^3.1.0",
+    "uuid": "^3.3.2"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.31",
+    "@types/ioredis": "^4.0.14",
+    "@types/node": "10",
+    "@types/uuid": "^3.4.5",
+    "serverless": "^1.50.0",
+    "serverless-offline": "^5.10.1",
+    "serverless-prune-plugin": "^1.4.0",
+    "serverless-webpack": "^5.3.1",
+    "ts-loader": "^6.0.4",
+    "tslint": "^5.18.0",
+    "tslint-config-prettier": "^1.18.0",
+    "typescript": "^3.5.3",
+    "webpack": "^4.39.2"
+  },
+  "author": "jaeyoung.choi <lactrious@gmail.com>",
+  "license": "MIT"
+}

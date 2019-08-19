@@ -1,0 +1,158 @@
+service:
+  name: summer-dawn-backend
+
+plugins:
+  - serverless-webpack
+  - serverless-offline
+  - serverless-prune-plugin
+
+provider:
+  name: aws
+  runtime: nodejs10.x
+  stage: production
+  region: ap-northeast-2
+  tracing:
+    apiGateway: true
+    lambda: true
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "s3:PutObject",
+        - "s3:PutObjectAcl",
+        - "s3:GetObject",
+        - "s3:GetObjectAcl",
+        - "s3:DeleteObject"
+      Resource:
+        - "arn:aws:s3:::${env:DOCUMENT_BUCKET_NAME}/*"
+        - "arn:aws:s3:::${env:IMAGE_BUCKET_NAME}/*"
+    - Effect: "Allow"
+      Action:
+        - "s3:ListBucket"
+      Resource:
+        - "arn:aws:s3:::${env:DOCUMENT_BUCKET_NAME}"
+        - "arn:aws:s3:::${env:IMAGE_BUCKET_NAME}"
+    - Effect: Allow
+      Action:
+        - lambda:InvokeFunction
+      Resource:
+        - Fn::Join:
+            - ":"
+            - - "arn:aws:lambda"
+              - Ref: "AWS::Region"
+              - Ref: "AWS::AccountId"
+              - "function"
+              - ${self:custom.bottomHalfLambda}
+  environment:
+    REDIS_HOST: ${env:REDIS_HOST}
+    REDIS_PASSWORD: ${env:REDIS_PASSWORD}
+    DOCUMENT_BUCKET_NAME: ${env:DOCUMENT_BUCKET_NAME}
+    IMAGE_BUCKET_NAME: ${env:IMAGE_BUCKET_NAME}
+    IMAGE_CDN_URL_PREFIX: ${env:IMAGE_CDN_URL_PREFIX}
+    WEBSOCKET_ENDPOINT: ${env:WEBSOCKET_ENDPOINT}
+    BOTTOM_HALF_LAMBDA: ${self:custom.bottomHalfLambda}
+    DEBUG: ${env:DEBUG, ""}
+  usagePlan:
+    quota:
+      limit: 100000
+      period: DAY
+    throttle:
+      burstLimit: 240
+      rateLimit: 60
+
+custom:
+  bottomHalfLambda: ${self:service.name}-${self:provider.stage}-bottomHalf
+  prune:
+    automatic: true
+    number: 7
+
+# GET    /notes
+# PUT    /note/{noteId}           {title: string}
+# POST   /note/{noteId}/users     {name: string, imageUrl: string}
+# DELETE /note/{noteId}
+# GET    /note/{noteId}
+# POST   /note/{noteId}/uploadImage         [string]
+# POST   /note/{noteId}/uploadProfileImage
+# POST   /note/{noteId}           {<operation>}
+
+# WebSocket connect, disconnect, message(x), postToConnection(callback)
+functions:
+  getNotes:
+    handler: src/handler/notes.get
+    events:
+      - http:
+          method: get
+          path: /notes
+  putNote:
+    handler: src/handler/note.put
+    events:
+      - http:
+          method: put
+          path: /note/{noteId}
+  joinNote:
+    handler: src/handler/note.join
+    events:
+      - http:
+          method: post
+          path: /note/{noteId}/users
+  purgeNote:
+    handler: src/handler/note.purge
+    events:
+      - http:
+          method: delete
+          path: /note/{noteId}
+  getNote:
+    handler: src/handler/note.get
+    events:
+      - http:
+          method: get
+          path: /note/{noteId}
+  uploadImage:
+    handler: src/handler/note.uploadImage
+    events:
+      - http:
+          method: post
+          path: /note/{noteId}/uploadImage
+  uploadProfileImage:
+    handler: src/handler/note.uploadProfileImage
+    events:
+      - http:
+          method: post
+          path: /note/{noteId}/uploadProfileImage
+  patch:
+    handler: src/handler/note.patch
+    events:
+      - http:
+          method: post
+          path: /note/{noteId}
+  bottomHalf:
+    handler: src/handler/note.bottomHalf
+    timeout: 900
+  connect:
+    handler: src/handler/ws.connect
+    memorySize: 256
+    events:
+      - websocket:
+          route: $connect
+  disconnect:
+    handler: src/handler/ws.disconnect
+    memorySize: 256
+    events:
+      - websocket:
+          route: $disconnect
+  message:
+    handler: src/handler/ws.message
+    memorySize: 128
+    events:
+      - websocket:
+          route: $default
+
+resources:
+  Resources:
+    DocumentBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${env:DOCUMENT_BUCKET_NAME}
+    ImageBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${env:IMAGE_BUCKET_NAME}
