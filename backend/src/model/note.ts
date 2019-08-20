@@ -25,23 +25,28 @@ export interface NoteElement {
 }
 
 export interface NotePadding extends NoteElement {
+  _type: "padding";
   height: number;
 }
 
 export interface NoteImage extends NoteElement {
+  _type: "image";
   url: string;
 }
 
 export interface NoteText extends NoteElement {
+  _type: "text";
   text: string;
   level: number;
 }
 
 export interface NoteChat extends NoteElement {
+  _type: "chat";
   userId: string;
   text: string;
   level: number;
 }
+
 export interface NoteElementIndexMap {
   [elementId: string]: number;
 }

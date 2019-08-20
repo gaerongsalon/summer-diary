@@ -44,12 +44,6 @@ export const join: APIGatewayProxyHandler = async event => {
 
 export const purge: APIGatewayProxyHandler = async event => {
   const { noteId, userId } = parseRequest(event);
-  const body = JSON.parse(event.body || "{}") as AddNoteRequest;
-  if (!body || !body.title) {
-    logger.error(`Invalid request`, noteId, userId, event.body);
-    throw new Error("Not Found");
-  }
-
   await Promise.all([
     getNotesService(userId).deleteNote(noteId),
     getNoteService(noteId).deleteNote(userId)
@@ -59,7 +53,7 @@ export const purge: APIGatewayProxyHandler = async event => {
 
 export const get: APIGatewayProxyHandler = async event => {
   const { noteId, userId } = parseRequest(event);
-  const note = getNoteService(noteId).getNote(userId);
+  const note = await getNoteService(noteId).getNote(userId);
   return { statusCode: 200, body: JSON.stringify(note) };
 };
 

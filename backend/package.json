@@ -7,7 +7,8 @@
     "debug": "SLS_DEBUG=* node --inspect ./node_modules/.bin/serverless offline -s dev",
     "start": "sls offline",
     "build": "sls package",
-    "deploy": "sls deploy"
+    "deploy": "sls deploy",
+    "test": "jest"
   },
   "dependencies": {
     "@yingyeothon/actor-system": "^0.1.8",
@@ -27,12 +28,16 @@
   "devDependencies": {
     "@types/aws-lambda": "^8.10.31",
     "@types/ioredis": "^4.0.14",
+    "@types/jest": "^24.0.18",
     "@types/node": "10",
     "@types/uuid": "^3.4.5",
+    "coveralls": "^3.0.6",
+    "jest": "^24.9.0",
     "serverless": "^1.50.0",
     "serverless-offline": "^5.10.1",
     "serverless-prune-plugin": "^1.4.0",
     "serverless-webpack": "^5.3.1",
+    "ts-jest": "^24.0.2",
     "ts-loader": "^6.0.4",
     "tslint": "^5.18.0",
     "tslint-config-prettier": "^1.18.0",

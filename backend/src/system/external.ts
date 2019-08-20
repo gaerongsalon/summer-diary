@@ -77,14 +77,14 @@ export const getS3ImageUploader = mem(() => {
   }
   const s3 = new S3();
   return (noteId: string, type: "jpg" | "png" = "jpg") => {
-    const imageId = [uuidv4(), uuidv4()].join("-") + `.${type}`;
+    const imageId = `${uuidv4()}.${type}`;
     const uploadUrl = s3.getSignedUrl("putObject", {
       Bucket: envars.s3.imageBucketName,
       Key: [noteId, imageId].join("/"),
       ContentType: `image/${type}`,
       Expires: 10 * 60
     });
-    const cdnUrl = `${envars.s3.imageCdnUrlPrefix}/${imageId}`;
+    const cdnUrl = `${envars.s3.imageCdnUrlPrefix}/${noteId}/${imageId}`;
     return { uploadUrl, cdnUrl };
   };
 });

@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from "uuid";
 import {
   AddCompletion,
   ChangeProfileCompletion,
@@ -6,7 +5,7 @@ import {
   DeleteCompletion,
   MoveCompletion
 } from "../../model/completion";
-import { Note, NoteElementIndexMap, NoteElementMap } from "../../model/note";
+import { Note, NoteElementIndexMap } from "../../model/note";
 import {
   AddOperation,
   ChangeProfileOperation,
@@ -16,6 +15,11 @@ import {
 } from "../../model/operation";
 import { getRepository, getSocketResponder } from "../../system/external";
 import logger from "../../system/logger";
+import {
+  applyAddOperation,
+  applyDeleteOperation,
+  applyMoveOperation
+} from "../../utils/operationApplier";
 import { valueOf } from "../../utils/typeGuard";
 import { ActorMessage } from "./message";
 
@@ -45,34 +49,29 @@ export class NoteProcessor {
           elements: {}
         };
         break;
-      case "joinUserToNote":
-        if (!this.note) {
-          throw new Error(`No document[${this.s3Key}]`);
-        }
-        this.note.profiles[message.payload.userId] = {
-          ...message.payload.profile
-        };
-        break;
       case "deleteNote":
         // It will be erased at `onAfterAct`.
         this.note = undefined;
         break;
       case "applyOperations":
-        if (!this.note) {
-          throw new Error(`No document[${this.s3Key}]`);
-        }
-        await getSocketResponder()(
-          this.note.noteId,
-          message.payload
-            .map(operation => this.onApplyOperation(operation))
-            .reduce((a, b) => a.concat(b), [])
-        );
+        await this.onApplyOperations(message.payload);
         break;
       default:
         logger.error(`Unknown message for NoteActor`, message);
         break;
     }
   };
+
+  private async onApplyOperations(operations: Operation[]) {
+    if (!this.note) {
+      throw new Error(`No document[${this.s3Key}]`);
+    }
+    const completions = operations
+      .map(operation => this.onApplyOperation(operation))
+      .reduce((a, b) => a.concat(b), []);
+    logger.info(`completions`, completions);
+    await getSocketResponder()(this.note.noteId, completions);
+  }
 
   private onApplyOperation(operation: Operation): Completion[] {
     if (!this.note) {
@@ -92,62 +91,51 @@ export class NoteProcessor {
   }
 
   private onApplyToAddElements(operation: AddOperation) {
-    const newIndices: NoteElementIndexMap = {};
-    for (const [elementId, element] of Object.entries(this.note!.elements)) {
-      if (element.index >= operation.indexToInsert) {
-        element.index += operation.elements.length;
-        newIndices[elementId] = element.index;
-      }
-    }
-    const newElements: NoteElementMap = {};
-    let index = operation.indexToInsert;
-    for (const element of operation.elements) {
-      element.index = index++;
-      newElements[uuidv4()] = element;
-    }
-    this.note!.elements = { ...this.note!.elements, ...newElements };
-    const now = new Date().toISOString();
-    return [
-      valueOf<AddCompletion>({ elements: newElements, modified: now }),
-      valueOf<MoveCompletion>({ newIndices, modified: now })
-    ];
+    const { elementsToAdd, newElements, newIndices } = applyAddOperation(
+      this.note!.elements,
+      operation
+    );
+    this.note!.elements = newElements;
+    return withMaybeMoved(
+      [
+        valueOf<AddCompletion>({
+          _type: "add",
+          elements: elementsToAdd,
+          modified: now()
+        })
+      ],
+      newIndices
+    );
   }
 
   private onApplyToMoveElements(operation: MoveOperation) {
-    const orderedElementIds = Object.entries(this.note!.elements)
-      .sort((a, b) => a[1].index - b[1].index)
-      .map(([elementId]) => elementId);
-    const movedElementIds = reorderElementIds(operation, orderedElementIds);
-    const indices: NoteElementIndexMap = {};
-    for (let index = 0; index < movedElementIds.length; ++index) {
-      indices[movedElementIds[index]] = index;
-    }
-    const newIndices: NoteElementIndexMap = {};
-    for (const [elementId, element] of Object.entries(this.note!.elements)) {
-      if (element.index !== indices[elementId]) {
-        newIndices[elementId] = indices[elementId];
-      }
-      element.index = indices[elementId];
-    }
-    const now = new Date().toISOString();
-    return [valueOf<MoveCompletion>({ modified: now, newIndices })];
+    const { newElements, newIndices } = applyMoveOperation(
+      this.note!.elements,
+      operation
+    );
+    this.note!.elements = newElements;
+    return withMaybeMoved([], newIndices);
   }
 
   private onApplyToDeleteElements(operation: DeleteOperation) {
-    const now = new Date().toISOString();
-    for (const elementId of operation.elementIds) {
-      delete this.note!.elements[elementId];
-    }
-    return [
-      valueOf<DeleteCompletion>({
-        modified: now,
-        elementIds: operation.elementIds
-      })
-    ];
+    const { newElements, newIndices } = applyDeleteOperation(
+      this.note!.elements,
+      operation
+    );
+    this.note!.elements = newElements;
+    return withMaybeMoved(
+      [
+        valueOf<DeleteCompletion>({
+          _type: "delete",
+          modified: now(),
+          elementIds: operation.elementIds
+        })
+      ],
+      newIndices
+    );
   }
 
   private onApplyToChangeProfile(operation: ChangeProfileOperation) {
-    const now = new Date().toISOString();
     const profile = {
       name: operation.name,
       imageUrl: operation.imageUrl
@@ -155,46 +143,24 @@ export class NoteProcessor {
     this.note!.profiles[operation.userId] = profile;
     return [
       valueOf<ChangeProfileCompletion>({
-        modified: now,
+        _type: "changeProfile",
+        modified: now(),
         profiles: { [operation.userId]: profile }
       })
     ];
   }
 }
 
-const reorderElementIds = (
-  operation: MoveOperation,
-  orderedElementIds: string[]
+const now = () => new Date().toISOString();
+
+const withMaybeMoved = (
+  completions: Completion[],
+  newIndices: NoteElementIndexMap
 ) => {
-  let toIndex = operation.toIndex;
-  const stickyElementIds = orderedElementIds.filter(
-    each => !operation.elementIds.includes(each)
-  );
-  const elementIdsToMove = orderedElementIds.filter(
-    each => !operation.elementIds.includes(each)
-  );
-  if (!orderedElementIds[toIndex]) {
-    // Move to end.
-    return [...stickyElementIds, ...elementIdsToMove];
-  } else {
-    while (
-      toIndex >= 0 &&
-      operation.elementIds.includes(orderedElementIds[toIndex])
-    ) {
-      --toIndex;
-    }
-    if (toIndex < 0) {
-      // Move to first
-      return [...elementIdsToMove, ...stickyElementIds];
-    } else {
-      // Move to the next of target.
-      const toElementId = orderedElementIds[toIndex];
-      const indexToInsert = stickyElementIds.indexOf(toElementId);
-      return [
-        ...stickyElementIds.slice(0, indexToInsert),
-        ...elementIdsToMove,
-        ...stickyElementIds.slice(indexToInsert)
-      ];
-    }
+  if (Object.keys(newIndices).length > 0) {
+    completions.push(
+      valueOf<MoveCompletion>({ _type: "move", newIndices, modified: now() })
+    );
   }
+  return completions;
 };

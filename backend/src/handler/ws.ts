@@ -7,7 +7,7 @@ const expiration = 2 * 60 * 60 * 1000;
 export const connect: APIGatewayProxyHandler = async event => {
   const userId = (event.headers["x-user"] || "").trim();
   const noteId = (event.headers["x-note"] || "").trim();
-  if (!userId || noteId) {
+  if (!userId || !noteId) {
     logger.error(`Unauthorized`, event.headers);
     return { statusCode: 401, body: "Unauthorized" };
   }

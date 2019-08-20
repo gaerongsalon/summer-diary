@@ -17,10 +17,10 @@ provider:
   iamRoleStatements:
     - Effect: "Allow"
       Action:
-        - "s3:PutObject",
-        - "s3:PutObjectAcl",
-        - "s3:GetObject",
-        - "s3:GetObjectAcl",
+        - "s3:PutObject"
+        - "s3:PutObjectAcl"
+        - "s3:GetObject"
+        - "s3:GetObjectAcl"
         - "s3:DeleteObject"
       Resource:
         - "arn:aws:s3:::${env:DOCUMENT_BUCKET_NAME}/*"
@@ -50,7 +50,7 @@ provider:
     IMAGE_CDN_URL_PREFIX: ${env:IMAGE_CDN_URL_PREFIX}
     WEBSOCKET_ENDPOINT: ${env:WEBSOCKET_ENDPOINT}
     BOTTOM_HALF_LAMBDA: ${self:custom.bottomHalfLambda}
-    DEBUG: ${env:DEBUG, ""}
+    DEBUG: ${env:DEBUG, "1"}
   usagePlan:
     quota:
       limit: 100000
@@ -65,16 +65,6 @@ custom:
     automatic: true
     number: 7
 
-# GET    /notes
-# PUT    /note/{noteId}           {title: string}
-# POST   /note/{noteId}/users     {name: string, imageUrl: string}
-# DELETE /note/{noteId}
-# GET    /note/{noteId}
-# POST   /note/{noteId}/uploadImage         [string]
-# POST   /note/{noteId}/uploadProfileImage
-# POST   /note/{noteId}           {<operation>}
-
-# WebSocket connect, disconnect, message(x), postToConnection(callback)
 functions:
   getNotes:
     handler: src/handler/notes.get

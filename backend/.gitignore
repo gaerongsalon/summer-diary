@@ -10,3 +10,6 @@ jspm_packages
 
 # Environment variables
 .envrc
+
+# Test
+coverage

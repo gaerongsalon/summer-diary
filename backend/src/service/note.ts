@@ -12,7 +12,7 @@ class NoteService {
   }
 
   public async getNote(userId: string) {
-    logger.info(`getNote`, this.noteId, userId);
+    logger.info(`getNote`, this.noteId, userId, this.s3Key);
     const note = await getRepository().document.get<Note>(this.s3Key);
     logger.debug(`note`, this.noteId, note);
     return note;
@@ -23,14 +23,6 @@ class NoteService {
     await requestToActor(this.s3Key, {
       type: "addNote",
       payload: note
-    });
-  }
-
-  public async joinUser(userId: string, name: string, imageUrl: string) {
-    logger.info(`joinUser`, this.s3Key, this.noteId, userId, name, imageUrl);
-    await requestToActor(this.s3Key, {
-      type: "joinUserToNote",
-      payload: { userId, profile: { name, imageUrl } }
     });
   }
 

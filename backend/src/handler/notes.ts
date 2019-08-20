@@ -1,7 +1,7 @@
 import { APIGatewayProxyHandler } from "aws-lambda";
 import { getNotesService } from "../service";
 
-export const getNotes: APIGatewayProxyHandler = async event => {
+export const get: APIGatewayProxyHandler = async event => {
   const userId = event.headers["x-user"];
   if (!userId) {
     return { statusCode: 401, body: "Unauthorized" };

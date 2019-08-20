@@ -18,7 +18,7 @@ class NotesService {
     const notes =
       (await getRepository().document.get<NoteListItem[]>(this.s3Key)) || [];
     logger.debug(`notes`, notes);
-    return notes;
+    return notes.sort((a, b) => b.created.localeCompare(a.created));
   }
 
   public async addNote(noteId: string, title: string) {
