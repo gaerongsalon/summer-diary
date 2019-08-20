@@ -13,6 +13,11 @@ import '../store/preference.dart';
 Map<String, String> defaultHeader() =>
     {'Content-Type': 'application/json', 'X-User': getUserId()};
 
+final utf8Encoding = Encoding.getByName('utf-8');
+
+T decodeBody<T>(http.Response response) =>
+    jsonDecode(utf8.decode(response.bodyBytes)) as T;
+
 Future<List<NoteListItemElement>> loadNoteItemList() async {
   final response = await http.get(EnvironmentVariables.serverUrl + '/notes',
       headers: defaultHeader());
@@ -20,7 +25,7 @@ Future<List<NoteListItemElement>> loadNoteItemList() async {
     throw new Exception('Server error ${response.statusCode}');
   }
 
-  final json = jsonDecode(response.body) as List<dynamic>;
+  final json = decodeBody<List<dynamic>>(response);
   return json
       .map((item) => NoteListItemElement(
           noteId: item['noteId'],
@@ -38,27 +43,18 @@ Future<NoteListItemElement> addNote(String title) async {
           body: jsonEncode({
             "title": title,
           }),
-          encoding: Encoding.getByName('utf-8'));
+          encoding: utf8Encoding);
   if (response.statusCode != 200) {
     throw new Exception('Server error ${response.statusCode}');
   }
 
-  final now = DateTime.parse(jsonDecode(response.body) as String);
+  final json = decodeBody<Map<String, dynamic>>(response);
   return NoteListItemElement(
-    noteId: noteId,
-    title: title,
-    created: now,
-    modified: now,
+    noteId: json['noteId'],
+    title: json['title'],
+    created: DateTime.parse(json['created']),
+    modified: DateTime.parse(json['created']),
   );
-}
-
-Future<void> joinNote(String noteId, String name, String imageUrl) async {
-  final response = await http.post(
-      EnvironmentVariables.serverUrl + '/note/$noteId/users',
-      headers: defaultHeader(),
-      body: jsonEncode({"name": name, "imageUrl": imageUrl}),
-      encoding: Encoding.getByName('utf-8'));
-  return response.statusCode == 200;
 }
 
 Future<bool> deleteNote(String noteId) async {
@@ -77,7 +73,7 @@ Future<NoteVO> loadNoteDocument(String noteId) async {
     throw new Exception('Server error ${response.statusCode}');
   }
 
-  final json = jsonDecode(response.body);
+  final json = decodeBody<dynamic>(response);
   return jsonToNoteVO(json);
 }
 
@@ -86,13 +82,14 @@ Future<Map<String, String>> uploadImages(
   final response = await http.post(
       EnvironmentVariables.serverUrl + '/note/$noteId/uploadImage',
       headers: defaultHeader(),
-      body: jsonEncode(fileLocations));
+      body: jsonEncode(fileLocations),
+      encoding: utf8Encoding);
   if (response.statusCode != 200) {
     throw new Exception('Server error ${response.statusCode}');
   }
 
   final result = <String, String>{};
-  final json = jsonDecode(response.body) as Map;
+  final json = decodeBody<Map<String, dynamic>>(response);
   for (final fileLocation in fileLocations) {
     final info = json[fileLocation];
     final bytes = File(fileLocation).readAsBytes();
@@ -110,13 +107,14 @@ Future<String> uploadNoteProfileImage(
     String userId, String noteId, String fileLocation) async {
   final response = await http.post(
       EnvironmentVariables.serverUrl + '/note/$noteId/uploadProfileImage',
-      headers: defaultHeader());
+      headers: defaultHeader(),
+      encoding: utf8Encoding);
   if (response.statusCode != 200) {
     throw new Exception('Server error ${response.statusCode}');
   }
 
-  final info = jsonDecode(response.body);
-  final bytes = File(fileLocation).readAsBytes();
+  final info = decodeBody<Map<String, dynamic>>(response);
+  final bytes = await File(fileLocation).readAsBytes();
   final uploaded = await http.put(info['uploadUrl'], body: bytes);
   if (uploaded.statusCode != 200) {
     throw new Exception(
@@ -131,7 +129,7 @@ Future<void> requestOperation(String noteId, List<Operation> operations) async {
       EnvironmentVariables.serverUrl + '/note/$noteId',
       headers: defaultHeader(),
       body: jsonEncode(json),
-      encoding: Encoding.getByName('utf-8'));
+      encoding: utf8Encoding);
   if (response.statusCode != 200) {
     throw new Exception('Server error ${response.statusCode}');
   }
