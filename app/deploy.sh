@@ -5,7 +5,7 @@ if [ -z "${DEPLOY_TOKEN}" ]; then
   exit 1
 fi
 
-APP_NAME="summer-dawn"
+APP_NAME="summer-diary"
 SERIAL="${1:-"$(date +"%Y%m%d_%H%M%S")"}"
 
 # https://github.com/yingyeothon/binary-distribution-api

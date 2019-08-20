@@ -1,4 +1,4 @@
-package me.hoppipolla.summerdawn
+package me.hoppipolla.summerdiary
 
 import android.os.Bundle
 

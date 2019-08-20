@@ -1,5 +1,5 @@
 {
-  "name": "summer-dawn-backend",
+  "name": "summer-diary-backend",
   "version": "1.0.0",
   "description": "The backend of Summer dawn",
   "main": "src/handler.ts",
