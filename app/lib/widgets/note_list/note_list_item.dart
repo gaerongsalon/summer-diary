@@ -55,14 +55,14 @@ class NoteListItem extends StatelessWidget {
     );
   }
 
-  void _onConfirmDismiss(
+  Future<void> _onConfirmDismiss(
       BuildContext context, DismissDirection direction) async {
     if (direction != DismissDirection.startToEnd) {
       return;
     }
 
     final bloc = BlocProvider.of<NoteListBloc>(context);
-    await Snacks.of(context).undoableDelete(
+    await Snacks.contextOf(context).undoableDelete(
         title: '노트를 삭제했습니다.',
         markAsDeleted: (deleted) => bloc.dispatch(
             MarkNoteAsDeleted(noteId: this.element.noteId, deleted: deleted)),

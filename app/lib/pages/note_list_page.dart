@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../bloc/note_list/bloc.dart';
@@ -19,14 +18,14 @@ class NoteListPage extends StatefulWidget {
 }
 
 class _NoteListPageState extends State<NoteListPage> {
+  final _scaffoldKey = new GlobalKey<ScaffoldState>();
   final _bloc = NoteListBloc();
 
   @override
   void initState() {
     super.initState();
     this._bloc.dispatch(LoadNoteList());
-    this._bloc.sideState.listen((side) => SchedulerBinding.instance
-        .addPostFrameCallback((_) => this._onSideState(side)));
+    this._bloc.sideState.listen(this._onSideState);
   }
 
   @override
@@ -38,9 +37,12 @@ class _NoteListPageState extends State<NoteListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: this._scaffoldKey,
       appBar: AppBar(
-        leading: Image.asset('assets/image/logo.png',
-            fit: BoxFit.cover, width: 24, height: 24),
+        leading: Padding(
+          padding: const EdgeInsets.all(9.0),
+          child: Image.asset('assets/images/logo.png'),
+        ),
         title: Text('여름 새벽'),
         actions: [_buildRefreshButton()],
       ),
@@ -89,9 +91,13 @@ class _NoteListPageState extends State<NoteListPage> {
 
   void _onSideState(NoteListSideState state) {
     switch (state) {
+      case NoteListSideState.loading:
+        Snacks.of(this._scaffoldKey.currentState).text('불러오는 중입니다.');
+        break;
       case NoteListSideState.loadError:
       case NoteListSideState.addError:
-        Snacks.of(context).text('서버와의 연결이 끊어졌습니다. 잠시 후 다시 시도해주세요.');
+        Snacks.of(this._scaffoldKey.currentState)
+            .text('서버와의 연결이 끊어졌습니다. 잠시 후 다시 시도해주세요.');
         break;
     }
   }

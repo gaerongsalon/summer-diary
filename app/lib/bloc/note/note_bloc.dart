@@ -101,11 +101,17 @@ class NoteBloc
         modified: vo.modified);
     this._hiddenElementIds = [];
 
+    // Upload this user profile if it is absent.
     final pref = Preference();
     if (!this._context.profiles.containsKey(getUserId()) &&
         pref.userName != null &&
         pref.userImageUrl != null) {
-      await joinNote(this._context.noteId, pref.userName, pref.userImageUrl);
+      await this._requestOperation([
+        ChangeProfileOperation(
+            userId: pref.userId,
+            name: pref.userName,
+            imageUrl: pref.userImageUrl)
+      ]);
     }
   }
 
@@ -228,13 +234,11 @@ class NoteBloc
         for (final each in completion.profiles.entries) {
           final target = this._context.profiles[each.key];
           if (target == null) {
-            requestRefresh = true;
-          } else {
             this._context.profiles[each.key] = target;
           }
           final pref = Preference();
           if (each.key == pref.userId) {
-            await pref.updateProfile(target.name, target.imageUrl);
+            await pref.updateProfile(each.value.name, each.value.imageUrl);
           }
         }
       } else {
@@ -275,6 +279,7 @@ class NoteBloc
 
       // If cannot connect to the callback server, use refresh instead.
       if (this._callbackSocket == null) {
+        await Future.delayed(Duration(milliseconds: 500));
         this.dispatch(LoadNote(noteId: this._context.noteId));
       }
     } catch (error) {

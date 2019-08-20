@@ -31,7 +31,7 @@ class _SplashPageState extends State<SplashPage> {
 
   Future<void> _warmUpAndStart() async {
     await Preference().warmUp();
-    await Future.delayed(Duration(seconds: 2));
+    await Future.delayed(Duration(seconds: 1));
     Navigator.of(context).pushReplacementNamed(PageNames.noteList);
   }
 }

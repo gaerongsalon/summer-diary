@@ -2,12 +2,16 @@ import 'package:meta/meta.dart';
 import 'package:flutter/material.dart';
 
 class Snacks {
-  final BuildContext context;
+  final ScaffoldState state;
 
-  Snacks._({@required this.context}) : assert(context != null);
+  Snacks._({@required this.state}) : assert(state != null);
 
-  factory Snacks.of(BuildContext context) {
-    return Snacks._(context: context);
+  factory Snacks.of(ScaffoldState state) {
+    return Snacks._(state: state);
+  }
+
+  factory Snacks.contextOf(BuildContext context) {
+    return Snacks._(state: Scaffold.of(context));
   }
 
   Future<void> undoableDelete({
@@ -17,7 +21,8 @@ class Snacks {
   }) async {
     markAsDeleted(true);
 
-    await Scaffold.of(this.context)
+    await this
+        .state
         .showSnackBar(SnackBar(
           content: Text(title),
           action: SnackBarAction(
@@ -46,14 +51,15 @@ class Snacks {
   }
 
   Future<void> text(String text) {
-    Scaffold.of(context).hideCurrentSnackBar();
-    return Scaffold.of(this.context)
+    this.state.hideCurrentSnackBar();
+    return this
+        .state
         .showSnackBar(SnackBar(
           content: Text(text),
           action: SnackBarAction(
             label: '닫기',
             onPressed: () {
-              Scaffold.of(context).hideCurrentSnackBar();
+              this.state.hideCurrentSnackBar();
             },
           ),
         ))

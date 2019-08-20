@@ -23,6 +23,7 @@ class NotePage extends StatefulWidget {
 }
 
 class _NotePageState extends State<NotePage> {
+  final _scaffoldKey = new GlobalKey<ScaffoldState>();
   final _bloc = NoteBloc();
 
   @override
@@ -49,29 +50,29 @@ class _NotePageState extends State<NotePage> {
   }
 
   Widget _buildNoteView(BuildContext context, NoteState state) {
-    if (state is NoteLoadedState) {
-      return Scaffold(
-          appBar: AppBar(
-            leading: IconButton(
-              icon: Icon(Icons.arrow_back),
-              tooltip: '뒤로가기',
-              onPressed: () {
-                Navigator.pop(context);
-              },
-            ),
-            titleSpacing: 4,
-            title: Text(state.document.title),
-            actions: [this._buildRefreshButton()],
+    return Scaffold(
+        key: this._scaffoldKey,
+        appBar: AppBar(
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back),
+            tooltip: '뒤로가기',
+            onPressed: () {
+              Navigator.pop(context);
+            },
           ),
-          body: SafeArea(
-            bottom: false,
-            child: _NoteElementList(),
-          ),
-          floatingActionButton: this._buildAddButton(context));
-    }
-    return Center(
-      child: Text('불러오고 있습니다.'),
-    );
+          titleSpacing: 4,
+          title: Text(state is NoteLoadedState ? state.document.title : '...'),
+          actions: [this._buildRefreshButton()],
+        ),
+        body: state is NoteLoadedState
+            ? SafeArea(
+                bottom: false,
+                child: _NoteElementList(),
+              )
+            : Center(
+                child: Text('불러오고 있습니다.'),
+              ),
+        floatingActionButton: this._buildAddButton(context));
   }
 
   Widget _buildRefreshButton() {
@@ -114,7 +115,7 @@ class _NotePageState extends State<NotePage> {
     final sourceFiles =
         await MultiImagePicker.pickImages(maxImages: 20, enableCamera: true);
     if (sourceFiles == null) {
-      Snacks.of(context).text('취소합니다.');
+      Snacks.of(this._scaffoldKey.currentState).text('취소합니다.');
       return;
     }
     final files = await Future.wait(sourceFiles.map((each) => each.filePath));
@@ -126,7 +127,7 @@ class _NotePageState extends State<NotePage> {
         context: context,
         builder: (BuildContext context) => PromptDialog(title: '새 메시지'));
     if (response == null) {
-      Snacks.of(context).text('취소합니다.');
+      Snacks.of(this._scaffoldKey.currentState).text('취소합니다.');
       return;
     }
     final text = (response as String).trim();
@@ -143,17 +144,17 @@ class _NotePageState extends State<NotePage> {
               defaultValue: Preference().userName ?? '',
             ));
     if (nameResponse == null) {
-      Snacks.of(context).text('취소합니다.');
+      Snacks.of(this._scaffoldKey.currentState).text('취소합니다.');
       return;
     }
     final name = (nameResponse as String).trim();
     if (name.length == 0) {
-      Snacks.of(context).text('취소합니다.');
+      Snacks.of(this._scaffoldKey.currentState).text('취소합니다.');
       return;
     }
     final image = await ImagePicker.pickImage(source: ImageSource.gallery);
     if (image == null) {
-      Snacks.of(context).text('취소합니다.');
+      Snacks.of(this._scaffoldKey.currentState).text('취소합니다.');
       return;
     }
     this._bloc.dispatch(

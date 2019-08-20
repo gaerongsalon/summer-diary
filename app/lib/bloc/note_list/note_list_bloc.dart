@@ -5,7 +5,7 @@ import '../../proxy/backend.dart';
 import '../simple_state_machine.dart';
 import 'bloc.dart';
 
-enum NoteListSideState { loadError, addError }
+enum NoteListSideState { loading, loadError, addError }
 
 class NoteListBloc extends SimpleBlocStateMachine<NoteListEvent, NoteListState,
     NoteListSideState> {
@@ -24,11 +24,13 @@ class NoteListBloc extends SimpleBlocStateMachine<NoteListEvent, NoteListState,
       };
 
   @override
-  NoteListState buildCurrentState() =>
-      NoteListLoadedState(items: []..addAll(this._items));
+  NoteListState buildCurrentState() => NoteListLoadedState(
+      items: []..addAll(
+          this._items.where((each) => !this._hiddenIds.contains(each.noteId))));
 
   Future<void> _onLoadNoteList(LoadNoteList event) async {
     try {
+      this.publishSide(NoteListSideState.loading);
       this._items = await loadNoteItemList();
       this._hiddenIds = [];
     } catch (error) {
