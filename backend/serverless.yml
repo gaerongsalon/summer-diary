@@ -78,12 +78,6 @@ functions:
       - http:
           method: put
           path: /note/{noteId}
-  joinNote:
-    handler: src/handler/note.join
-    events:
-      - http:
-          method: post
-          path: /note/{noteId}/users
   purgeNote:
     handler: src/handler/note.purge
     events:
@@ -146,3 +140,15 @@ resources:
       Type: AWS::S3::Bucket
       Properties:
         BucketName: ${env:IMAGE_BUCKET_NAME}
+    ImageBucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket:
+          Ref: ImageBucket
+        PolicyDocument:
+          Statement:
+            - Action:
+                - "s3:GetObject"
+              Effect: "Allow"
+              Resource: arn:aws:s3:::${env:IMAGE_BUCKET_NAME}/*
+              Principal: "*"
