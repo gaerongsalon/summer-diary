@@ -75,7 +75,9 @@ export const getS3ImageUploader = mem(() => {
   if (!envars.external.production) {
     throw new Error(`Do not use S3 while testing.`);
   }
-  const s3 = new S3();
+  const s3 = new S3({
+    useAccelerateEndpoint: true
+  });
   return (noteId: string, type: "jpg" | "png" = "jpg") => {
     const imageId = `${uuidv4()}.${type}`;
     const uploadUrl = s3.getSignedUrl("putObject", {

@@ -140,6 +140,12 @@ resources:
       Type: AWS::S3::Bucket
       Properties:
         BucketName: ${env:IMAGE_BUCKET_NAME}
+        AccelerateConfiguration:
+          AccelerationStatus: Enabled
+        # AccessControl: PublicRead
+        WebsiteConfiguration:
+          IndexDocument: index.html
+          ErrorDocument: index.html
     ImageBucketPolicy:
       Type: AWS::S3::BucketPolicy
       Properties:
