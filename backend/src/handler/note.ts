@@ -1,5 +1,5 @@
 import { APIGatewayProxyEvent, APIGatewayProxyHandler } from "aws-lambda";
-import { AddNoteRequest, JoinNoteRequest } from "../model/handler";
+import { AddNoteRequest } from "../model/handler";
 import { Operation } from "../model/operation";
 import { getNoteService, getNotesService } from "../service";
 import { getS3ImageUploader } from "../system/external";
@@ -28,18 +28,6 @@ export const put: APIGatewayProxyHandler = async event => {
   const note = await getNotesService(userId).addNote(noteId, body.title);
   await getNoteService(noteId).addNote(note, userId);
   return { statusCode: 200, body: JSON.stringify(note) };
-};
-
-export const join: APIGatewayProxyHandler = async event => {
-  const { noteId, userId } = parseRequest(event);
-  const body = JSON.parse(event.body || "{}") as JoinNoteRequest;
-  if (!body || !body.name || !body.imageUrl) {
-    logger.error(`Invalid request`, noteId, userId, event.body);
-    throw new Error("Not Found");
-  }
-
-  await getNoteService(noteId).joinUser(userId, body.name, body.imageUrl);
-  return { statusCode: 200, body: JSON.stringify(true) };
 };
 
 export const purge: APIGatewayProxyHandler = async event => {
