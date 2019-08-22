@@ -88,24 +88,25 @@ class NoteTextElement extends NoteElement {
 
 class NoteChatElement extends NoteElement {
   final String name;
-  final String image;
+  final String imageUrl;
   final String text;
   final int level;
 
   NoteChatElement(
       {@required String elementId,
       @required this.name,
-      @required this.image,
+      @required this.imageUrl,
       @required this.text,
       @required this.level})
       : assert(name != null),
-        assert(image != null),
+        assert(imageUrl != null),
         assert(text != null),
         assert(level != null),
         super(elementId: elementId);
 
   @override
   List get props {
-    return super.props..addAll([this.name, this.image, this.text, this.level]);
+    return super.props
+      ..addAll([this.name, this.imageUrl, this.text, this.level]);
   }
 }

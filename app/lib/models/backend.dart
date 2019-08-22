@@ -83,7 +83,7 @@ class NoteImageVO extends NoteElementVO {
 
   @override
   Map<String, dynamic> toJson() =>
-      {"_type": "padding", "index": this.index, "url": this.url};
+      {"_type": "image", "index": this.index, "url": this.url};
 }
 
 class NoteTextVO extends NoteElementVO {
@@ -99,7 +99,7 @@ class NoteTextVO extends NoteElementVO {
 
   @override
   Map<String, dynamic> toJson() => {
-        "_type": "padding",
+        "_type": "text",
         "index": this.index,
         "text": this.text,
         "level": this.level
@@ -124,7 +124,7 @@ class NoteChatVO extends NoteElementVO {
 
   @override
   Map<String, dynamic> toJson() => {
-        "_type": "padding",
+        "_type": "chat",
         "index": this.index,
         "userId": this.userId,
         "text": this.text,

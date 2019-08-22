@@ -210,6 +210,7 @@ class NoteBloc
 
     var requestRefresh = false;
     for (final completion in event.completions) {
+      print(completion);
       this._context.modified = completion.modified;
       if (completion is AddCompletion) {
         this._context.elements.addAll(completion.elements);
@@ -274,6 +275,7 @@ class NoteBloc
 
   Future<void> _requestOperation(List<Operation> operations) async {
     assert(this._context != null);
+    print(operations);
     try {
       await requestOperation(this._context.noteId, operations);
 
@@ -310,7 +312,7 @@ class NoteBloc
         return NoteChatElement(
             elementId: elementId,
             name: user?.name ?? '비밀',
-            image: user?.imageUrl ?? 'default',
+            imageUrl: user?.imageUrl ?? 'default',
             text: vo.text,
             level: vo.level);
       }

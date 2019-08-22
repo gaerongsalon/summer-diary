@@ -19,20 +19,17 @@ class NoteImage extends StatelessWidget {
     return Column(
       children: <Widget>[
         Container(
-          margin: const EdgeInsets.only(bottom: 24.0),
-          decoration:
-              BoxDecoration(color: Colors.white /* No border */, boxShadow: [
-            BoxShadow(
-                color: const Color(0x88000000),
-                offset: Offset(2.0, 2.0),
-                blurRadius: 4),
-          ]),
-          child: ConstrainedBox(
-              constraints: BoxConstraints(maxHeight: 320),
-              child: this.element.sourceType == NoteImageSourceType.url
-                  ? CachedNetworkImage(imageUrl: this.element.url)
-                  : Image.file(File(this.element.url))),
-        ),
+            margin: const EdgeInsets.only(bottom: 36.0),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                  maxHeight: 480,
+                  maxWidth: MediaQuery.of(context).size.width - 24),
+              child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16.0),
+                  child: this.element.sourceType == NoteImageSourceType.url
+                      ? CachedNetworkImage(imageUrl: this.element.url)
+                      : Image.file(File(this.element.url))),
+            )),
       ],
     );
   }

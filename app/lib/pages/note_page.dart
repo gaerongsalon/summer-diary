@@ -113,7 +113,7 @@ class _NotePageState extends State<NotePage> {
 
   void _pickImages(BuildContext context) async {
     final sourceFiles =
-        await MultiImagePicker.pickImages(maxImages: 20, enableCamera: true);
+        await MultiImagePicker.pickImages(maxImages: 20, enableCamera: false);
     if (sourceFiles == null) {
       Snacks.of(this._scaffoldKey.currentState).text('취소합니다.');
       return;
@@ -171,11 +171,14 @@ class _NoteElementList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scrollbar(
-      child: BlocBuilder(
-        bloc: BlocProvider.of<NoteBloc>(context),
-        builder: (BuildContext context, NoteState state) =>
-            this._buildListView(state),
+    return Padding(
+      padding: const EdgeInsets.only(top: 12.0),
+      child: Scrollbar(
+        child: BlocBuilder(
+          bloc: BlocProvider.of<NoteBloc>(context),
+          builder: (BuildContext context, NoteState state) =>
+              this._buildListView(state),
+        ),
       ),
     );
   }

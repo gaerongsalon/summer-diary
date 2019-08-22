@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:meta/meta.dart';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
@@ -92,8 +93,18 @@ Future<Map<String, String>> uploadImages(
   final json = decodeBody<Map<String, dynamic>>(response);
   for (final fileLocation in fileLocations) {
     final info = json[fileLocation];
-    final bytes = File(fileLocation).readAsBytes();
-    final uploaded = await http.put(info['uploadUrl'], body: bytes);
+
+    final compressed = await FlutterImageCompress.compressWithFile(
+      fileLocation,
+      minWidth: 512,
+      minHeight: 512,
+      quality: 90,
+    );
+    print('Upload an image of ${compressed.length}bytes');
+    print('Upload url: ' + info['uploadUrl']);
+    print('CDN url: ' + info['cdnUrl']);
+
+    final uploaded = await http.put(info['uploadUrl'], body: compressed);
     if (uploaded.statusCode == 200) {
       result[fileLocation] = info['cdnUrl'];
     } else {
@@ -113,9 +124,19 @@ Future<String> uploadNoteProfileImage(
     throw new Exception('Server error ${response.statusCode}');
   }
 
+  final compressed = await FlutterImageCompress.compressWithFile(
+    fileLocation,
+    minWidth: 128,
+    minHeight: 128,
+    quality: 90,
+  );
+
   final info = decodeBody<Map<String, dynamic>>(response);
-  final bytes = await File(fileLocation).readAsBytes();
-  final uploaded = await http.put(info['uploadUrl'], body: bytes);
+  print('Upload an image of ${compressed.length}bytes');
+  print('Upload url: ' + info['uploadUrl']);
+  print('CDN url: ' + info['cdnUrl']);
+
+  final uploaded = await http.put(info['uploadUrl'], body: compressed);
   if (uploaded.statusCode != 200) {
     throw new Exception(
         'Cannot upload $fileLocation due to ${uploaded.statusCode}');

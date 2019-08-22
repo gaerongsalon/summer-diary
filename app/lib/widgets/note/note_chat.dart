@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
@@ -29,11 +30,25 @@ class NoteChat extends StatelessWidget {
   }
 
   Widget _buildPortrait() {
-    return CircleAvatar(
-        backgroundColor: Colors.transparent,
-        radius: 24,
-        child: Image.asset('assets/images/yellow.png',
-            fit: BoxFit.cover, width: 48, height: 48));
+    print(this.element.imageUrl);
+    if (this.element.imageUrl == null || this.element.imageUrl == "default") {
+      return CircleAvatar(
+          backgroundColor: Colors.transparent,
+          radius: 24,
+          child: Image.asset(
+            'assets/images/yellow.png',
+            width: 48,
+            height: 48,
+            fit: BoxFit.cover,
+          ));
+    }
+    return ClipOval(
+        child: CachedNetworkImage(
+      imageUrl: this.element.imageUrl,
+      width: 48,
+      height: 48,
+      fit: BoxFit.cover,
+    ));
   }
 
   Widget _buildName(BuildContext context) {
