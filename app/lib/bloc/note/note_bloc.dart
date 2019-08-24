@@ -11,12 +11,26 @@ import 'bloc.dart';
 
 enum NoteSideState {
   noDocument,
+  startToLoadDocument,
+  documentLoaded,
+  joinDocument,
+  startToUpdateProfile,
   cannotUpdateProfile,
+  profileUpdated,
   requestRefresh,
   startToUploadImage,
+  uploadImageProgress,
   uploadCompleted,
   cannotUploadImages,
-  cannotConnectToServer
+  cannotConnectToServer,
+  elementAdded,
+}
+
+class NoteSide {
+  final NoteSideState state;
+  final dynamic arguments;
+
+  NoteSide(this.state, {this.arguments});
 }
 
 class NoteContext {
@@ -37,8 +51,7 @@ class NoteContext {
       this.modified});
 }
 
-class NoteBloc
-    extends SimpleBlocStateMachine<NoteEvent, NoteState, NoteSideState> {
+class NoteBloc extends SimpleBlocStateMachine<NoteEvent, NoteState, NoteSide> {
   NoteContext _context;
   List<String> _hiddenElementIds = [];
   CallbackSocket _callbackSocket;
@@ -84,11 +97,11 @@ class NoteBloc
   }
 
   Future<void> _onLoadNote(LoadNote event) async {
-    await this._initializeCallbackSocket(event.noteId);
-
+    print('Start to load a note.');
+    this.publishSide(NoteSide(NoteSideState.startToLoadDocument));
     final vo = await loadNoteDocument(event.noteId);
     if (vo == null) {
-      this.publishSide(NoteSideState.noDocument);
+      this.publishSide(NoteSide(NoteSideState.noDocument));
       return;
     }
 
@@ -100,12 +113,14 @@ class NoteBloc
         created: vo.created,
         modified: vo.modified);
     this._hiddenElementIds = [];
+    this.publishSide(NoteSide(NoteSideState.documentLoaded));
 
     // Upload this user profile if it is absent.
     final pref = Preference();
     if (!this._context.profiles.containsKey(getUserId()) &&
         pref.userName != null &&
         pref.userImageUrl != null) {
+      this.publishSide(NoteSide(NoteSideState.joinDocument));
       await this._requestOperation([
         ChangeProfileOperation(
             userId: pref.userId,
@@ -113,6 +128,7 @@ class NoteBloc
             imageUrl: pref.userImageUrl)
       ]);
     }
+    print('A note is loaded completely.');
   }
 
   Future<void> _onChangeUserProfile(ChangeUserProfile event) async {
@@ -120,11 +136,12 @@ class NoteBloc
     final userId = getUserId();
     String url;
     try {
+      this.publishSide(NoteSide(NoteSideState.startToUpdateProfile));
       url = await uploadNoteProfileImage(
           userId, this._context.noteId, event.fileLocation);
     } catch (error) {
       print(error);
-      this.publishSide(NoteSideState.cannotUpdateProfile);
+      this.publishSide(NoteSide(NoteSideState.cannotUpdateProfile));
       return;
     }
     await this._requestOperation([
@@ -141,14 +158,22 @@ class NoteBloc
   }
 
   Future<void> _onAddImage(AddImage event) async {
-    this.publishSide(NoteSideState.startToUploadImage);
+    this.publishSide(NoteSide(NoteSideState.startToUploadImage,
+        arguments: {"totalCount": event.fileLocations.length}));
     Map<String, String> uploaded;
     try {
-      uploaded = await uploadImages(this._context.noteId, event.fileLocations);
-      this.publishSide(NoteSideState.uploadCompleted);
+      uploaded = await uploadImages(this._context.noteId, event.fileLocations,
+          (completedCount) {
+        this.publishSide(NoteSide(NoteSideState.uploadImageProgress,
+            arguments: {
+              "completedCount": completedCount,
+              "totalCount": event.fileLocations.length
+            }));
+      });
+      this.publishSide(NoteSide(NoteSideState.uploadCompleted));
     } catch (error) {
       print(error);
-      this.publishSide(NoteSideState.cannotUploadImages);
+      this.publishSide(NoteSide(NoteSideState.cannotUploadImages));
       return;
     }
 
@@ -233,21 +258,20 @@ class NoteBloc
             .removeWhere((each) => completion.elementIds.contains(each));
       } else if (completion is ChangeProfileCompletion) {
         for (final each in completion.profiles.entries) {
-          final target = this._context.profiles[each.key];
-          if (target == null) {
-            this._context.profiles[each.key] = target;
-          }
+          this._context.profiles[each.key] = NoteProfileVO(
+              name: each.value.name, imageUrl: each.value.imageUrl);
           final pref = Preference();
           if (each.key == pref.userId) {
             await pref.updateProfile(each.value.name, each.value.imageUrl);
           }
+          this.publishSide(NoteSide(NoteSideState.profileUpdated));
         }
       } else {
         throw new Exception('Unknown completion ${completion.runtimeType}');
       }
     }
     if (requestRefresh) {
-      this.publishSide(NoteSideState.requestRefresh);
+      this.publishSide(NoteSide(NoteSideState.requestRefresh));
     }
   }
 
@@ -266,7 +290,7 @@ class NoteBloc
         await this._callbackSocket.connect();
       } catch (error) {
         print(error);
-        this.publishSide(NoteSideState.cannotConnectToServer);
+        this.publishSide(NoteSide(NoteSideState.cannotConnectToServer));
         this._callbackSocket.close();
         this._callbackSocket = null;
       }
@@ -275,6 +299,8 @@ class NoteBloc
 
   Future<void> _requestOperation(List<Operation> operations) async {
     assert(this._context != null);
+    await this._initializeCallbackSocket(this._context.noteId);
+
     print(operations);
     try {
       await requestOperation(this._context.noteId, operations);
@@ -286,7 +312,7 @@ class NoteBloc
       }
     } catch (error) {
       print(error);
-      this.publishSide(NoteSideState.cannotConnectToServer);
+      this.publishSide(NoteSide(NoteSideState.cannotConnectToServer));
     }
   }
 
@@ -318,5 +344,15 @@ class NoteBloc
       }
       throw new Exception('No mapping for vo ${vo.runtimeType}');
     }).toList();
+  }
+
+  @override
+  Future<void> onAfterYield(NoteEvent event) async {
+    print('onAfterYield: ' + event.runtimeType.toString());
+    if (event is ApplyCompletion) {
+      if (event.completions.any((each) => each is AddCompletion)) {
+        this.publishSide(NoteSide(NoteSideState.elementAdded));
+      }
+    }
   }
 }

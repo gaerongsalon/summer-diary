@@ -30,6 +30,7 @@ abstract class BlocStateMachine<Event, State> extends Bloc<Event, State> {
           'No handler mapped with State[$stateType] -> Event[$eventType]');
     }
     yield await handler(event);
+    await this.onAfterYield(event);
   }
 
   @protected
@@ -39,4 +40,7 @@ abstract class BlocStateMachine<Event, State> extends Bloc<Event, State> {
   Map<Type /* StateType */,
           Map<Type /* EventType */, BlocEventHandler<Event, State>>>
       generateDispatcher();
+
+  @protected
+  Future<void> onAfterYield(Event event) async {}
 }

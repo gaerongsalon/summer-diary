@@ -60,7 +60,7 @@ class _NoteListPageState extends State<NoteListPage> {
       child: IconButton(
         icon: Icon(Icons.refresh),
         tooltip: '새로고침',
-        onPressed: () {
+        onPressed: () async {
           this._bloc.dispatch(LoadNoteList());
         },
       ),
@@ -78,6 +78,10 @@ class _NoteListPageState extends State<NoteListPage> {
   }
 
   void _addNoteList(BuildContext context) async {
+    if (this._bloc.busy) {
+      Snacks.contextOf(context).text('조금만 기다려주세요!', closable: true);
+      return;
+    }
     final title = await showDialog(
         context: context,
         builder: (BuildContext context) => PromptDialog(
@@ -89,16 +93,33 @@ class _NoteListPageState extends State<NoteListPage> {
     }
   }
 
+  final _snackBar = StatefulSnackBar();
+
   void _onSideState(NoteListSideState state) {
     switch (state) {
-      case NoteListSideState.loading:
-        Snacks.of(this._scaffoldKey.currentState).text('불러오는 중입니다.');
-        break;
+      case NoteListSideState.loadList:
+        return this._snackBar.show(context: context, message: '불러오는 중입니다!');
+      case NoteListSideState.listLoaded:
+        return this._snackBar.show(
+            context: context,
+            message: '완료되었습니다!',
+            barrier: false,
+            closeAfter: Duration(milliseconds: 1500));
+      case NoteListSideState.addItem:
+        return this._snackBar.show(context: context, message: '새 노트를 추가합니다!');
+      case NoteListSideState.itemAdded:
+        return this._snackBar.show(
+            context: context,
+            message: '추가되었습니다!',
+            barrier: false,
+            closeAfter: Duration(milliseconds: 1500));
       case NoteListSideState.loadError:
       case NoteListSideState.addError:
-        Snacks.of(this._scaffoldKey.currentState)
-            .text('서버와의 연결이 끊어졌습니다. 잠시 후 다시 시도해주세요.');
-        break;
+        return this._snackBar.show(
+            context: context,
+            message: '서버와의 연결이 끊어졌습니다 ㅜㅜ 잠시 후 다시 시도해주세요!',
+            barrier: false,
+            closeAfter: Duration(milliseconds: 4000));
     }
   }
 }

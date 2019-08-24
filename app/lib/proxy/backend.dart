@@ -78,8 +78,8 @@ Future<NoteVO> loadNoteDocument(String noteId) async {
   return jsonToNoteVO(json);
 }
 
-Future<Map<String, String>> uploadImages(
-    String noteId, List<String> fileLocations) async {
+Future<Map<String, String>> uploadImages(String noteId,
+    List<String> fileLocations, void Function(int) progress) async {
   final response = await http.post(
       EnvironmentVariables.serverUrl + '/note/$noteId/uploadImage',
       headers: defaultHeader(),
@@ -91,7 +91,9 @@ Future<Map<String, String>> uploadImages(
 
   final result = <String, String>{};
   final json = decodeBody<Map<String, dynamic>>(response);
+  int progressCount = 0;
   for (final fileLocation in fileLocations) {
+    progress(++progressCount);
     final info = json[fileLocation];
 
     final compressed = await FlutterImageCompress.compressWithFile(
@@ -174,6 +176,7 @@ class CallbackSocket {
   }
 
   Future<void> connect() async {
+    print('Start to connect to the callback server.');
     assert(this._socket == null);
     this._socket =
         await WebSocket.connect(EnvironmentVariables.callbackUrl, headers: {
@@ -190,9 +193,11 @@ class CallbackSocket {
         this.connect();
       }
     }, cancelOnError: true);
+    print('The callback server is connected successfully.');
   }
 
   void close() {
+    print('Clear a socket connected with the callback server.');
     this._active = false;
     this._clearSocket();
   }
@@ -205,6 +210,7 @@ class CallbackSocket {
         print('Error occurred while close a socket: $closeError');
       }
       this._socket = null;
+      print('A socket connected with the callback server is clear completely.');
     }
   }
 }

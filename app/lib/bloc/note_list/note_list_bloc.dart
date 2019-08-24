@@ -5,7 +5,14 @@ import '../../proxy/backend.dart';
 import '../simple_state_machine.dart';
 import 'bloc.dart';
 
-enum NoteListSideState { loading, loadError, addError }
+enum NoteListSideState {
+  loadList,
+  loadError,
+  listLoaded,
+  addItem,
+  addError,
+  itemAdded
+}
 
 class NoteListBloc extends SimpleBlocStateMachine<NoteListEvent, NoteListState,
     NoteListSideState> {
@@ -30,9 +37,10 @@ class NoteListBloc extends SimpleBlocStateMachine<NoteListEvent, NoteListState,
 
   Future<void> _onLoadNoteList(LoadNoteList event) async {
     try {
-      this.publishSide(NoteListSideState.loading);
+      this.publishSide(NoteListSideState.loadList);
       this._items = await loadNoteItemList();
       this._hiddenIds = [];
+      this.publishSide(NoteListSideState.listLoaded);
     } catch (error) {
       print(error);
       this.publishSide(NoteListSideState.loadError);
@@ -41,8 +49,10 @@ class NoteListBloc extends SimpleBlocStateMachine<NoteListEvent, NoteListState,
 
   Future<void> _onAddNote(AddNote event) async {
     try {
+      this.publishSide(NoteListSideState.addItem);
       final newNote = await addNote(event.title);
       this._items.insert(0, newNote);
+      this.publishSide(NoteListSideState.itemAdded);
     } catch (error) {
       print(error);
       this.publishSide(NoteListSideState.addError);

@@ -30,7 +30,6 @@ class NoteChat extends StatelessWidget {
   }
 
   Widget _buildPortrait() {
-    print(this.element.imageUrl);
     if (this.element.imageUrl == null || this.element.imageUrl == "default") {
       return CircleAvatar(
           backgroundColor: Colors.transparent,
@@ -53,25 +52,25 @@ class NoteChat extends StatelessWidget {
 
   Widget _buildName(BuildContext context) {
     return Container(
-        padding: const EdgeInsets.only(left: 6),
+        padding: const EdgeInsets.only(left: 12),
         constraints:
             BoxConstraints(maxWidth: MediaQuery.of(context).size.width - 80),
         child: Text(
           this.element.name,
           textAlign: TextAlign.left,
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
         ));
   }
 
   Widget _buildText(BuildContext context) {
     return Container(
-        padding: const EdgeInsets.only(left: 6, top: 2),
+        padding: const EdgeInsets.only(left: 12, top: 2),
         constraints:
             BoxConstraints(maxWidth: MediaQuery.of(context).size.width - 80),
         child: Text(
           this.element.text,
           textAlign: TextAlign.left,
-          style: TextStyle(fontSize: this.element.level.toDouble()),
+          style: TextStyle(fontSize: 14),
         ));
   }
 }

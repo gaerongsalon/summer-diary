@@ -8,6 +8,9 @@ typedef SimpleBlocEventHandler<Event> = Future<void> Function(Event);
 abstract class SimpleBlocStateMachine<Event, State, Side>
     extends Bloc<Event, State> {
   final _sideState = StreamController<Side>();
+  bool _busy = false;
+
+  bool get busy => this._busy;
 
   @override
   void dispose() {
@@ -27,8 +30,14 @@ abstract class SimpleBlocStateMachine<Event, State, Side>
       throw new Exception(
           'No handler mapped with ' + event.runtimeType.toString());
     }
-    await handler(event);
-    yield this.buildCurrentState();
+    this._busy = true;
+    try {
+      await handler(event);
+      yield this.buildCurrentState();
+      await this.onAfterYield(event);
+    } finally {
+      this._busy = false;
+    }
   }
 
   @protected
@@ -48,4 +57,7 @@ abstract class SimpleBlocStateMachine<Event, State, Side>
   void publishSide(Side side) {
     this._sideState.add(side);
   }
+
+  @protected
+  Future<void> onAfterYield(Event event) async {}
 }
