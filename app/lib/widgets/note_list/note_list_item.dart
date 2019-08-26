@@ -57,10 +57,6 @@ class NoteListItem extends StatelessWidget {
 
   Future<void> _onConfirmDismiss(
       BuildContext context, DismissDirection direction) async {
-    if (direction != DismissDirection.startToEnd) {
-      return;
-    }
-
     final bloc = BlocProvider.of<NoteListBloc>(context);
     await Snacks.contextOf(context).undoableDelete(
         title: '노트를 삭제했습니다.',

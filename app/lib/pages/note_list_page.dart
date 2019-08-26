@@ -79,7 +79,10 @@ class _NoteListPageState extends State<NoteListPage> {
 
   void _addNoteList(BuildContext context) async {
     if (this._bloc.busy) {
-      Snacks.contextOf(context).text('조금만 기다려주세요!', closable: true);
+      this._snackBar.show(
+          context: context,
+          message: '조금만 기다려주세요!',
+          closeAfter: Duration(milliseconds: 1500));
       return;
     }
     final title = await showDialog(

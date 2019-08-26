@@ -11,8 +11,8 @@ dependencies:
     sdk: flutter
 
   # UI
-  image_picker:
-  multi_image_picker:
+  file_picker:
+    git: git://github.com/lacti/plugins_flutter_file_picker
   cached_network_image:
   flutter_speed_dial:
 

@@ -96,13 +96,24 @@ Future<Map<String, String>> uploadImages(String noteId,
     progress(++progressCount);
     final info = json[fileLocation];
 
-    final compressed = await FlutterImageCompress.compressWithFile(
-      fileLocation,
-      minWidth: 512,
-      minHeight: 512,
-      quality: 90,
-    );
+    List<int> compressed;
+    try {
+      compressed = await FlutterImageCompress.compressWithFile(
+        fileLocation,
+        minWidth: 512,
+        minHeight: 512,
+        quality: 90,
+      );
+    } catch (error) {
+      print('Invalid image[$fileLocation] by error[$error]');
+      continue;
+    }
+    if (compressed.length == 0) {
+      print('Invalid image[$fileLocation] of zero bytes');
+      continue;
+    }
     print('Upload an image of ${compressed.length}bytes');
+    print('File location: ' + fileLocation);
     print('Upload url: ' + info['uploadUrl']);
     print('CDN url: ' + info['cdnUrl']);
 

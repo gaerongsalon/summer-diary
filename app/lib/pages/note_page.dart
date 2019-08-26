@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:multi_image_picker/multi_image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 
 import '../bloc/note/bloc.dart';
 import '../store/preference.dart';
@@ -132,13 +131,13 @@ class _NotePageState extends State<NotePage> {
   void _pickImages(BuildContext context) async {
     try {
       final sourceFiles =
-          await MultiImagePicker.pickImages(maxImages: 20, enableCamera: false);
-      if (sourceFiles == null) {
+          await FilePicker.getMultiFilePath(type: FileType.IMAGE);
+      if (sourceFiles == null || sourceFiles.length == 0) {
         Snacks.of(this._scaffoldKey.currentState)
             .text('취소합니다.', closable: true);
         return;
       }
-      final files = await Future.wait(sourceFiles.map((each) => each.filePath));
+      final files = sourceFiles.values.toList();
       this._bloc.dispatch(AddImage(fileLocations: files));
     } catch (error) {
       print(error);
@@ -172,13 +171,13 @@ class _NotePageState extends State<NotePage> {
       Snacks.of(this._scaffoldKey.currentState).text('취소합니다.', closable: true);
       return;
     }
-    final image = await ImagePicker.pickImage(source: ImageSource.gallery);
-    if (image == null) {
+    final imageFile = await FilePicker.getFile(type: FileType.IMAGE);
+    if (imageFile == null) {
       Snacks.of(this._scaffoldKey.currentState).text('취소합니다.', closable: true);
       return;
     }
     this._bloc.dispatch(
-        ChangeUserProfile(name: name, fileLocation: image.absolute.path));
+        ChangeUserProfile(name: name, fileLocation: imageFile.absolute.path));
   }
 
   final _snackBar = StatefulSnackBar();

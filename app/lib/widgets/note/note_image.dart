@@ -27,7 +27,13 @@ class NoteImage extends StatelessWidget {
               child: ClipRRect(
                   borderRadius: BorderRadius.circular(16.0),
                   child: this.element.sourceType == NoteImageSourceType.url
-                      ? CachedNetworkImage(imageUrl: this.element.url)
+                      ? CachedNetworkImage(
+                          imageUrl: this.element.url,
+                          placeholder: (context, url) =>
+                              CircularProgressIndicator(),
+                          errorWidget: (context, url, error) =>
+                              Icon(Icons.error),
+                        )
                       : Image.file(File(this.element.url))),
             )),
       ],
