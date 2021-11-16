@@ -18,7 +18,7 @@
     "@yingyeothon/repository": "^0.1.3",
     "@yingyeothon/repository-redis": "^0.1.3",
     "@yingyeothon/repository-s3": "^0.1.3",
-    "aws-sdk": "2.439.0",
+    "aws-sdk": "2.814.0",
     "ioredis": "^4.14.0",
     "mem": "^5.1.1",
     "source-map-support": "^0.5.10",
